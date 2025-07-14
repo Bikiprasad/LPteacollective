@@ -59,16 +59,16 @@ if page == '🏠 Home':
 
     # Add content to each column
     with col1:
-        st.metric("Total Customers", len(customers))
+        st.metric("Total Customers", len(customers),delta=0, delta_color="normal")
 
     with col2:
-        st.metric("Total Collection Today", len(todays_collection_data))
+        st.metric("Total Collection Today", len(todays_collection_data),delta=-10, delta_color="normal")
 
     with col3:
 
         #sum of all weight of todays collection data
         total_weight = todays_collection_data["Weight (kg)"].sum()
-        st.metric("Today's Total Weight", f"{total_weight:.2f}")
+        st.metric("Today's Total Weight", f"{total_weight:.2f}",delta=0, delta_color="normal")
 
     
     with st.expander("Today's Collection Data", expanded=False):
