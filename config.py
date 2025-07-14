@@ -1,18 +1,18 @@
 from configparser import ConfigParser
+import streamlit as st
 
-def load_config(filename='database.ini', section='postgresql'):
-    parser = ConfigParser()
-    parser.read(filename)
+host = st.secrets["host"]
+database = st.secrets["database"]   
+user = st.secrets["user"]
+password = st.secrets["password"]
 
-    # get section, default to postgresql
+def load_config():
     config = {}
-    if parser.has_section(section):
-        params = parser.items(section)
-        for param in params:
-            config[param[0]] = param[1]
-    else:
-        raise Exception('Section {0} not found in the {1} file'.format(section, filename))
-
+    config['host'] = host
+    config['database'] = database
+    config['user'] = user
+    config['password'] = password
+    
     return config
 
 if __name__ == '__main__':
