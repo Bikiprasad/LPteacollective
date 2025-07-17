@@ -7,6 +7,13 @@ from factoryRate import insert_factory_rate, fetch_factory_rate,update_collectio
 from dailycollectiondata import get_dailycollectiondata, insert_dailycollectiondata, fetch_todays_collection_data
 from datetime import datetime
 
+
+st.set_page_config(
+    page_title="LP Green Leafs",
+    page_icon="🍃",
+    layout="wide", # Use wide layout for more space
+    initial_sidebar_state="collapsed" # Set this globally if desired
+)
 # Custom CSS for better UI
 st.markdown("""
     <style>
@@ -16,7 +23,7 @@ st.markdown("""
     .stMetric {
         background-color: #f0f2f6;
         padding: 10px;
-        border-radius: 5px;
+        border-radius: 5px; 
     }
     </style>
 """, unsafe_allow_html=True)   
@@ -24,23 +31,34 @@ st.markdown("""
 #globalvariables
 #quality types will be option of 3 : First Quality, Second Quality, General 
 quality_types = ["First Quality", "Second Quality", "General"]
+@st.cache_data
+def get_customers_cached_data():
+    return get_customers()
+cachedcustomers = get_customers_cached_data()
+
 customers = get_customers()
+collections1 = get_dailycollectiondata()
+
+d1 = pd.DataFrame(customers, columns=["Customer ID", "Customer Name", "Mobile Number", "Address", "Advance Amount", "Date of Joining", "Agent ID"])
+d2 = pd.DataFrame(collections1, columns=["Collection Data ID", "Collection Date", "Customer ID", "Agent ID", "Weight (kg)", "Collection Time", "Rate per kg", "Quality", "Amount", "Water Percentage"])
+mergedcollections = pd.merge(d1, d2, on='Customer ID', how='inner')
+
 #customer name will be displayed in the select box
 #assuming the first column is Customer ID
 customer_options = [customer[0] for customer in customers]  # Assuming the first column is Customer ID
 
 
 
-st.sidebar.title('🍃 Navigation')
+st.sidebar.title('🍃 LP Green Leafs')
 initial_sidebar_state="collapsed"   
 page = st.sidebar.radio(
-    "",
+    "Navigation",
     ['🏠 Home', '➕ Add Customer', '📝 Daily Collection', '📊 Collection History', '📈 Statistics', '₹ Daily Rates']
 )
 
 if page == '🏠 Home':
-    st.set_page_config(page_title="LP Green Leafs", page_icon="🍃",
-    initial_sidebar_state="collapsed" )
+    # st.write("Customers and Collections Merged Data:")
+    # st.dataframe(mergedcollections,use_container_width=True,hide_index=True)
     st.title("🍃 LP Green Leafs 🍃 ")
 
     #todays collection data
@@ -62,13 +80,12 @@ if page == '🏠 Home':
         st.metric("Total Customers", len(customers),delta=0, delta_color="normal")
 
     with col2:
-        st.metric("Total Collection Today", len(todays_collection_data),delta=-10, delta_color="normal")
-
+        st.metric("Total Collection Today", len(todays_collection_data),delta=0, delta_color="normal")
     with col3:
 
         #sum of all weight of todays collection data
         total_weight = todays_collection_data["Weight (kg)"].sum()
-        st.metric("Today's Total Weight", f"{total_weight:.2f}",delta=0, delta_color="normal")
+        st.metric("Today's Total Weight", f"{total_weight:.2f}",delta=-10, delta_color="normal")
 
     
     with st.expander("Today's Collection Data", expanded=False):
@@ -130,27 +147,70 @@ elif page == '📝 Daily Collection':
     collectiondataid = datetime.now().strftime("%Y%m%d")
         #random number generate
     collectiondataid += str(random.randint(1000, 9999))
+    #make collectiondataid read-only
+    st.text_input("Collection Data ID", value=collectiondataid, disabled=True,label_visibility="hidden")
+
+    # if "weights" not in st.session_state:
+    #     st.session_state.weights = []
+    # weight_input = st.number_input("Add Weight (kg)", min_value=0.0, format="%.2f", value=0.0, key="weight_input")
+    # col1 , col2 = st.columns(2)
+    # with col1:
+    #     add_weight = st.button("Add Weight")
+    # with col2:
+    #     clear_weights = st.button("Clear Weights")
+    # if add_weight and weight_input > 0:
+    #     st.session_state.weights.append(weight_input)
+    #     st.success(f"Added weight: {weight_input} kg")
+
+    # if st.session_state.weights:
+    #     total_weight = sum(st.session_state.weights)
+    #     st.write(f"**Total Weight:** {total_weight:.2f} kg")
+    # else:
+    #     total_weight = 0.0
+
+    # if clear_weights:
+    #     st.session_state.weights = []
+    #     total_weight = 0.0  # Reset total weight when cleared
+    #     st.text_input("Total Weight (kg)", value=f"{total_weight}", disabled=True)
+    #take space seperated numbers as input for weights
+    # st.text_input("Weights (kg)", value="", placeholder="Enter weights separated by space")
+    weights_input = st.text_input("Weights (kg)", value="", placeholder="Enter weights separated by + sign (e.g., 10+20+30)")
+    total_btn = st.button("Calculate Total Weight")
+    total_weight_x = 0.0  # Initialize total weight variable
+    total_calc_weight = 0.0  # Initialize total calculated weight variable
+    if "weights" not in st.session_state:
+        st.session_state.weights = []
+    if total_btn and weights_input:
+        x = [float(w) for w in weights_input.split('+')]
+        total_weight_x = sum(x)
+        st.session_state.weights.append(total_weight_x)
+          
+
     with st.form("Insert Daily Collection Data", clear_on_submit=True):
-        
-        #make collectiondataid read-only
-        st.text_input("Collection Data ID", value=collectiondataid, disabled=True)
         #collectiondataid = st.text_input("Collection Data ID", value="", placeholder="Enter Collection Data ID")
         collectiondate = st.date_input("Collection Date", value=None)
         agentid = st.number_input("Agent ID", min_value=1)
-        weight = st.number_input("Weight (kg)", min_value=0.0, format="%.2f", value=0.0)
+        if st.session_state.weights:
+            total_calc_weight = sum(st.session_state.weights)
+        st.write(f"**Total Weight:** {total_calc_weight} kg")
+        weight = total_calc_weight  # Use the total weight from the session state
+        print("Weight:", weight)
         collectiontime = datetime.now().time()
-        rate = st.number_input("Rate per kg", min_value=0.0, format="%.2f", value=0.0)
+        rate = 0
         quality = st.selectbox("Quality", options=quality_types, index=0)
-        amount = st.number_input("Amount", min_value=0.0, format="%.2f", value=0.0)
+        amount = 0
         waterpercent = st.number_input("Water Percentage (%)", min_value=0, max_value=100, value=0)
-
-        if st.form_submit_button("Submit Collection Data"):
+        submit_collection= st.form_submit_button("Submit Collection Data")
+        if submit_collection:
             insert_dailycollectiondata(collectiondataid, collectiondate, customerid, agentid, weight, collectiontime, rate, quality, amount, waterpercent)
             st.success("Daily collection data inserted successfully")
             collectiondataid = None  # Reset collectiondataid after submission
+            total_weight = 0.0  # Reset total weight after submission
+            total_calc_weight = 0.0  # Reset calculated total weight after submission
+            st.session_state.weights = []
 
     #fetch daily collection data
-    st.write("You can also retrieve daily collection data using the function get_dailycollectiondata()")
+    # st.write("You can also retrieve daily collection data using the function get_dailycollectiondata()")
     dailycollectiondatabtn = st.button("Fetch Daily Collection Data")
     if dailycollectiondatabtn:
         st.write("Daily Collection Data:")
@@ -227,9 +287,13 @@ elif page == '📊 Collection History':
 
     # --- Display Filtered Data ---
     st.subheader("Filtered Collection Data")
-    st.dataframe(collection_df)
+    newcollection_df = pd.merge(d1, collection_df, on='Customer ID', how='inner')
+    # Display only relevant columns
+    display_columns = ["Collection Date", "Customer Name", "Weight (kg)", "Quality", "Rate per kg", "Amount",'Water Percentage']
+    newcollection_df = newcollection_df[display_columns]
+    st.dataframe(newcollection_df,hide_index=True)
 
-    # --- Display Summary Statistics ---
+    # --- Display Summary Statistics --- 
     if not collection_df.empty:
         total_weight = collection_df['Weight (kg)'].sum()
         total_amount = collection_df['Amount'].sum()
@@ -271,6 +335,7 @@ elif page == '📈 Statistics':
         amount = int(total_amount.sum())
         st.metric("Total Amount Collected Today (₹)", int(amount))
 
+    
 
 elif page == '₹ Daily Rates':
     #form to insert factory rate
@@ -288,3 +353,5 @@ elif page == '₹ Daily Rates':
             st.success("Factory rate inserted successfully")
             update_collection_rate(factoryrate, ratedate, agentid, quality)
             factoryrateid = None
+
+
