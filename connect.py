@@ -25,6 +25,36 @@ st.markdown("""
         padding: 10px;
         border-radius: 5px; 
     }
+    div[role="radiogroup"] {
+        flex-direction:column;
+        width: 100% !important;
+    }
+    input[type="radio"] + div {
+        background: #63ADD2 !important;
+        color: #FFF;
+        border-radius: 38px !important;
+        padding: 8px 18px !important;
+        width: 100% !important;
+    }
+    input[type="radio"][tabindex="0"] + div {
+        background: #E6FF4D !important;
+        color: #17455C !important;
+        width: 100% !important;
+    }
+    input[type="radio"][tabindex="0"] + div p {
+        color: #17455C !important;
+    }
+    div[role="radiogroup"] label > div:first-child {
+        display: none !important
+    }
+    div[role="radiogroup"] label {
+        margin-right: 0px !important;
+        width: 100% !important;
+    }
+    div[role="radiogroup"] {
+            gap: 12px;
+            width: 100% !important;
+    }
     </style>
 """, unsafe_allow_html=True)   
 
